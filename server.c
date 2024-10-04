@@ -15,8 +15,6 @@
 #include <sys/select.h>
 #include <errno.h>
 
-// uint8_t == unsigned char == 1B
-
 #define MAX_LENGTH 11
 #define MAX_PLAYER 10
 #define MAX_DATA 6000
@@ -24,25 +22,26 @@
 
 typedef struct PlayerStruct
 {
-    char name[MAX_LENGTH];
-    int x, y, hp, damage;
+    char name[MAX_LENGTH];  // 사용자 이름
+    int x, y, hp, damage;   // 좌표, 체력, 데미지 값
 } Player;
 
 typedef struct MessageStruct
 {
-    int messageType;
-    int dataLength;
-    char data[MAX_DATA];
-    time_t pubTime;
+    int messageType;        // 0: NEW, 1: MOVE, 2: ATTACK, 3: UPDATE
+    int dataLength;         // 데이터 영역의 크기
+    char data[MAX_DATA];    // 데이터 영역
+    time_t pubTime;         // 발행 시각
 } Message;
 
 static Player* players[MAX_PLAYER] = {NULL, };
 static int clients[MAX_PLAYER] = {0, };
 static int numPlayers = 0;
 
-unsigned int ddongComputerDelay = 0; // 똥컴의 딜레이
-
 void newPlayer(char* name) {
+    /*
+     * 사용자 이름을 입력받아 새 Player 개체를 반환하는 함수
+     */
     Player* p = (Player*) malloc(sizeof(Player));
 
     if(p == NULL || numPlayers >= MAX_PLAYER) {
@@ -68,6 +67,9 @@ void newPlayer(char* name) {
 }
 
 Player* getPlayerByName(char* name) {
+    /*
+     * 사용자 이름을 입력받아 해당 Player 개체를 반환하는 함수
+     */
     for(int i = 0; i < numPlayers; i++) {
         if(strcmp(players[i]->name, name) == 0) {
             return players[i];
@@ -77,12 +79,18 @@ Player* getPlayerByName(char* name) {
 }
 
 int getDamageByPlayerName(char* name) {
+    /*
+     * 사용자 이름을 입력받아 데미지 값을 반환하는 함수
+     */
     Player* p = getPlayerByName(name);
     if(p == NULL) return 0;
     return p->damage;
 }
 
 void setHpByPlayerName(char* name, int hp) {
+    /*
+     * 사용자 이름을 입력받아 체력 값을 업데이트하는 함수
+     */
     Player* p = getPlayerByName(name);
     if(p == NULL) return;
     p->hp = hp;
@@ -90,36 +98,18 @@ void setHpByPlayerName(char* name, int hp) {
 }
 
 int getHpByPlayerName(char* name) {
+    /*
+     * 사용자 이름을 입력받아 체력 값을 반환하는 함수
+     */
     Player* p = getPlayerByName(name);
     if(p == NULL) return 0;
     return p->hp;
 }
 
-int getPlayerXPositionByName(char* name) {
-    Player* p = getPlayerByName(name);
-    if(p == NULL) return 0;
-        return p->x;
-}
-
-int getPlayerYPositionByName(char* name) {
-    Player* p = getPlayerByName(name);
-    if(p == NULL) return 0;
-        return p->y;
-}
-
-void setPlayerXPositionByName(char* name, int x) {
-    Player* p = getPlayerByName(name);
-    if(p == NULL) return;
-    p->x = x;
-}
-
-void setPlayerYPositionByName(char* name, int y) {
-    Player* p = getPlayerByName(name);
-    if(p == NULL) return;
-    p->y = y;
-}
-
 void updatePosition(char* name, int x, int y) {
+    /*
+     * 사용자 이름을 입력받아 좌표값을 업데이트하는 함수
+     */
     Player* p = getPlayerByName(name);
     if(p == NULL) return;
     p->x = x;
@@ -128,6 +118,11 @@ void updatePosition(char* name, int x, int y) {
 }
 
 void updateStatus() {
+    /*
+     * 모든 클라이언트에게 업데이트된 정보를 브로드캐스트
+     * Message 패킷을 만들고, 상태 정보를 모두 담은 후
+     * 모든 클라이언트에게 send
+     */
     for(int i = 0; i < numPlayers; i++) {
         Message m;
 
@@ -276,6 +271,8 @@ void start_server(int port) {
     socklen_t client_len = sizeof(client_addr);
 
     while(1) {
+        // 새 클라이언트 패킷 수신 대기와
+        // 기존 클라이언트 수신 대기를 위한 select 구문
         FD_ZERO(&readfds);
         FD_SET(server_socket, &readfds);
         max_sd = server_socket;
@@ -318,6 +315,7 @@ void start_server(int port) {
         }
     }
 
+    // 종료 시 서버 소켓 닫기
     close(server_socket);
     for(int i = 0; i < numPlayers; i++) close(clients[i]);
 }
@@ -325,7 +323,10 @@ void start_server(int port) {
 
 
 int main(void) {
+    // 8081번 포트에서 서버 시작
     start_server(8081);
+
+    // 종료 시 클라이언트 소켓 닫기
     for(int i = 0; i < numPlayers; i++) close(clients[i]);
     return 0;
 }

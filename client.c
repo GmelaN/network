@@ -160,19 +160,13 @@ int main() {
 
     printf("ATTACK USER -> TEST_USER: %s\n", m.data);
 
-        m.messageType = 1;
+    m.messageType = 1;
     memset(m.data, 0, MAX_DATA);
-    strcpy(m.data, "user\t1\t2");
+    strcpy(m.data, "user\t3\t1");
     m.pubTime = 0;
-    m.dataLength = strlen("user\t1\t2");
+    m.dataLength = strlen("user\t3\t1");
     sendRequest(socket2, &m);
-
-        m.messageType = 1;
-    memset(m.data, 0, MAX_DATA);
-    strcpy(m.data, "user\t1\t2");
-    m.pubTime = 0;
-    m.dataLength = strlen("user\t1\t2");
-    sendRequest(socket2, &m);
+    printf("MOVE USER: %s\n", m.data);
 
     close(socket1);
     close(socket2);
